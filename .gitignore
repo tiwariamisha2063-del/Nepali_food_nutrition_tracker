@@ -1,0 +1,19 @@
+# Private database configuration
+/includes/db.php
+/.env
+/.env.*
+
+# Allow example configuration files
+!/.env.example
+
+# Temporary files
+*.log
+*.tmp
+
+# Operating system files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor settings
+.vscode/
