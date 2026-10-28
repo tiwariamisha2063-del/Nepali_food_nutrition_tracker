@@ -2,13 +2,30 @@
 <?php
 require_once "includes/db.php";
 
-// Retrieve all food records from the database
-$sql = "SELECT * FROM foods ORDER BY food_name ASC";
-$stmt = $pdo->query($sql);
+// Get the search word entered by the user
+$search = trim($_GET["search"] ?? "");
+
+// Search for foods if a search word is entered
+if ($search !== "") {
+    $sql = "SELECT * FROM foods
+            WHERE food_name LIKE :search
+            ORDER BY food_name ASC";
+
+    $stmt = $pdo->prepare($sql);
+
+    $stmt->execute([
+        "search" => "%" . $search . "%"
+    ]);
+} else {
+    // Display all foods if the search box is empty
+    $sql = "SELECT * FROM foods ORDER BY food_name ASC";
+    $stmt = $pdo->query($sql);
+}
 
 // Store the retrieved records in an array
 $foods = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -20,7 +37,24 @@ $foods = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <body>
 
     <h1>Nepalese Food Nutrition Tracker</h1>
-    <h2>Food List</h2>
+<h2>Food List</h2>
+
+<form method="GET" action="food.php">
+    <input
+        type="text"
+        name="search"
+        placeholder="Search food by name..."
+        value="<?= htmlspecialchars($search) ?>"
+    >
+
+    <button type="submit">Search</button>
+
+    <?php if ($search !== ""): ?>
+        <a href="food.php">Clear Search</a>
+    <?php endif; ?>
+</form>
+
+<br>
 
     <table border="1" cellpadding="8" cellspacing="0">
         <thead>
