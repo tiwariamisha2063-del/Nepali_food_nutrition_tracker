@@ -66,7 +66,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <h1>Nepalese Food Nutrition Tracker</h1>
     <h2>Add New Food</h2>
 
-    <p><?= htmlspecialchars($message) ?></p>
+    <p style="color: green;">
+    <?= htmlspecialchars($message) ?>
+</p>
 
     <form method="POST" action="add_food.php">
 
