@@ -1,6 +1,11 @@
 
 <?php
 require_once "includes/db.php";
+$message = "";
+
+if (isset($_GET["message"]) && $_GET["message"] === "deleted") {
+    $message = "Food deleted successfully!";
+}
 
 // Get the search word entered by the user
 $search = trim($_GET["search"] ?? "");
@@ -37,6 +42,11 @@ $foods = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <body>
 
     <h1>Nepalese Food Nutrition Tracker</h1>
+    <?php if ($message !== ""): ?>
+    <p style="color: green;">
+        <?= htmlspecialchars($message) ?>
+    </p>
+<?php endif; ?>
 <h2>Food List</h2>
 
 <form method="GET" action="food.php">
