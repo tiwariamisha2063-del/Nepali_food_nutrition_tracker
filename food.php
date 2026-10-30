@@ -76,6 +76,7 @@ $foods = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <th>Carbohydrates (g)</th>
                 <th>Fat (g)</th>
                 <th>Serving Size</th>
+                <th>Actions</th>
             </tr>
         </thead>
 
@@ -89,6 +90,13 @@ $foods = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <td><?= htmlspecialchars($food["carbohydrates"]) ?></td>
                     <td><?= htmlspecialchars($food["fat"]) ?></td>
                     <td><?= htmlspecialchars($food["serving_size"]) ?></td>
+                    <td>
+    <a href="edit_food.php?id=<?= (int) $food['id'] ?>">Edit</a>
+
+    |
+
+    <a href="delete_food.php?id=<?= (int) $food['id'] ?>">Delete</a>
+</td>
                 </tr>
             <?php endforeach; ?>
         </tbody>
