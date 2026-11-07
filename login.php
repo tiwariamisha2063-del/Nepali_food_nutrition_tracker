@@ -1,9 +1,12 @@
+
 <?php
 session_start();
 
 require_once "includes/db.php";
+require_once "includes/notification.php";
 
 $message = "";
+$message_type = "";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
@@ -11,7 +14,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $password = $_POST["password"];
 
     if (empty($email) || empty($password)) {
+
         $message = "Please enter your email and password.";
+        $message_type = "error";
+
     } else {
 
         $stmt = $pdo->prepare(
@@ -28,29 +34,42 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             $_SESSION["user_id"] = $user["id"];
             $_SESSION["user_name"] = $user["full_name"];
+            $_SESSION["user_role"] = $user["role"];
+
+            set_notification("Login successful! Welcome back.", "success");
 
             header("Location: dashboard.php");
-exit;
+            exit;
 
         } else {
+
             $message = "Invalid email or password.";
+            $message_type = "error";
         }
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>User Login</title>
+
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-    <h2>Login to Your Account</h2>
+    <?php display_notification(); ?>
 
     <?php if ($message !== ""): ?>
-        <p><?php echo htmlspecialchars($message); ?></p>
+        <?php set_notification($message, $message_type); ?>
+        <?php display_notification(); ?>
     <?php endif; ?>
+
+    <h2>Login to Your Account</h2>
 
     <form method="POST" action="login.php">
 
@@ -66,7 +85,9 @@ exit;
 
     </form>
 
-    <p>Don't have an account? <a href="signup.php">Register here</a></p>
+    <p>Don't have an account?
+        <a href="signup.php">Register here</a>
+    </p>
 
 </body>
 </html>

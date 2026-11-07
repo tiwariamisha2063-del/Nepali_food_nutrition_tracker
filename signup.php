@@ -1,7 +1,12 @@
+
 <?php
+session_start();
+
 require_once "includes/db.php";
+require_once "includes/notification.php";
 
 $message = "";
+$message_type = "";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
@@ -11,10 +16,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     if (empty($full_name) || empty($email) || empty($password)) {
         $message = "Please fill in all fields.";
+        $message_type = "error";
+
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $message = "Please enter a valid email address.";
+        $message_type = "error";
+
     } elseif (strlen($password) < 8) {
         $message = "Password must be at least 8 characters long.";
+        $message_type = "error";
+
     } else {
 
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
@@ -31,7 +42,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 "password" => $hashed_password
             ]);
 
-            $message = "Registration successful!";
+           set_notification("Registration successful!", "success");
+
+header("Location: signup.php");
+exit;
+
+            header("Location: signup.php");
+            exit;
 
         } catch (PDOException $e) {
             if ($e->getCode() === "23000") {
@@ -39,23 +56,39 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             } else {
                 $message = "Something went wrong. Please try again.";
             }
+
+            $message_type = "error";
         }
     }
 }
+
+// Get successful registration notification
+if (isset($_SESSION["notification"])) {
+    $message = $_SESSION["notification"]["message"];
+    $message_type = $_SESSION["notification"]["type"];
+
+    unset($_SESSION["notification"]);
+}
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>User Registration</title>
+    <link rel="stylesheet" href="css/style.css">
+
+    
+          
 </head>
+
 <body>
 
-    <h2>Create an Account</h2>
+    <?php display_notification(); ?>
 
-    <?php if ($message !== ""): ?>
-        <p><?php echo htmlspecialchars($message); ?></p>
-    <?php endif; ?>
+    <h2>Create an Account</h2>
 
     <form method="POST" action="signup.php">
 
@@ -74,6 +107,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <button type="submit">Register</button>
 
     </form>
+
+    <script>
+        // Automatically hide notification after 4 seconds
+        setTimeout(function () {
+            const notification = document.getElementById("notification");
+
+            if (notification) {
+                notification.remove();
+            }
+        }, 4000);
+    </script>
 
 </body>
 </html>

@@ -2,12 +2,15 @@
 <?php
 session_start();
 
+require_once "includes/db.php";
+require_once "includes/notification.php";
+
 if (!isset($_SESSION["user_id"])) {
     header("Location: login.php");
     exit;
 }
 
-require_once "includes/db.php";
+
 
 $message = "";
 
@@ -29,12 +32,20 @@ if (!$food) {
 
 // Update the food when the form is submitted
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
+
     $food_name = trim($_POST["food_name"] ?? "");
     $category = trim($_POST["category"] ?? "");
-    $calories = $_POST["calories"] ?? "";
-    $protein = $_POST["protein"] ?? "";
-    $carbohydrates = $_POST["carbohydrates"] ?? "";
-    $fat = $_POST["fat"] ?? "";
+    $calories = trim($_POST["calories"] ?? "");
+
+    // Set empty nutrition fields to zero
+    $protein = trim($_POST["protein"] ?? "0");
+    $carbohydrates = trim($_POST["carbohydrates"] ?? "0");
+    $fat = trim($_POST["fat"] ?? "0");
+
+    $protein = ($protein === "") ? "0" : $protein;
+    $carbohydrates = ($carbohydrates === "") ? "0" : $carbohydrates;
+    $fat = ($fat === "") ? "0" : $fat;
+
     $serving_size = trim($_POST["serving_size"] ?? "");
 
     if (
@@ -43,6 +54,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $serving_size === ""
     ) {
         $message = "Food name, calories, and serving size are required.";
+
     } elseif (
         !is_numeric($calories) ||
         !is_numeric($protein) ||
@@ -54,7 +66,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $fat < 0
     ) {
         $message = "Nutrition values must be valid, non-negative numbers.";
+
     } else {
+
         $sql = "UPDATE foods
                 SET food_name = :food_name,
                     category = :category,
@@ -66,24 +80,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 WHERE id = :id";
 
         $stmt = $pdo->prepare($sql);
+
         $stmt->execute([
-            "food_name" => $food_name,
-            "category" => $category,
-            "calories" => $calories,
-            "protein" => $protein,
-            "carbohydrates" => $carbohydrates,
-            "fat" => $fat,
-            "serving_size" => $serving_size,
-            "id" => $id
-        ]);
+    "food_name" => $food_name,
+    "category" => $category,
+    "calories" => $calories,
+    "protein" => $protein,
+    "carbohydrates" => $carbohydrates,
+    "fat" => $fat,
+    "serving_size" => $serving_size,
+    "id" => $id
+]);
 
-        $message = "Food updated successfully!";
-      
+set_notification("Food updated successfully!", "success");
 
-        // Refresh the food details after updating
-        $stmt = $pdo->prepare("SELECT * FROM foods WHERE id = :id");
-        $stmt->execute(["id" => $id]);
-        $food = $stmt->fetch(PDO::FETCH_ASSOC);
+header("Location: food.php");
+exit();
     }
 }
 ?>
@@ -93,18 +105,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Edit Food - Nepalese Food Nutrition Tracker</title>
 </head>
-<body>
 
+<body>
+<?php display_notification(); ?>
     <h1>Nepalese Food Nutrition Tracker</h1>
     <h2>Edit Food</h2>
 
     <?php if ($message !== ""): ?>
-    <p style="color: green;">
-        <?= htmlspecialchars($message) ?>
-    </p>
-<?php endif; ?>
+        <p style="color: green;">
+            <?= htmlspecialchars($message) ?>
+        </p>
+    <?php endif; ?>
 
     <form method="POST" action="edit_food.php?id=<?= (int) $id ?>">
 
@@ -119,23 +133,30 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <br><br>
 
         <label for="calories">Calories (kcal):</label><br>
-        <input type="number" id="calories" name="calories" min="0" step="0.01"
+        <input type="number" id="calories" name="calories"
+               min="0" step="0.01"
                value="<?= htmlspecialchars((string) $food['calories']) ?>" required>
         <br><br>
 
         <label for="protein">Protein (g):</label><br>
-        <input type="number" id="protein" name="protein" min="0" step="0.01"
-               value="<?= htmlspecialchars((string) $food['protein']) ?>" required>
+        <input type="number" id="protein" name="protein"
+               min="0" step="0.01"
+               value="<?= htmlspecialchars((string) $food['protein']) ?>"
+               class="nutrition-input" required>
         <br><br>
 
         <label for="carbohydrates">Carbohydrates (g):</label><br>
-        <input type="number" id="carbohydrates" name="carbohydrates" min="0" step="0.01"
-               value="<?= htmlspecialchars((string) $food['carbohydrates']) ?>" required>
+        <input type="number" id="carbohydrates" name="carbohydrates"
+               min="0" step="0.01"
+               value="<?= htmlspecialchars((string) $food['carbohydrates']) ?>"
+               class="nutrition-input" required>
         <br><br>
 
         <label for="fat">Fat (g):</label><br>
-        <input type="number" id="fat" name="fat" min="0" step="0.01"
-               value="<?= htmlspecialchars((string) $food['fat']) ?>" required>
+        <input type="number" id="fat" name="fat"
+               min="0" step="0.01"
+               value="<?= htmlspecialchars((string) $food['fat']) ?>"
+               class="nutrition-input" required>
         <br><br>
 
         <label for="serving_size">Serving Size:</label><br>
@@ -148,6 +169,29 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     </form>
 
     <p><a href="food.php">Back to Food List</a></p>
+
+    <script>
+        // Handle default zero in nutrition fields
+        const nutritionInputs = document.querySelectorAll(".nutrition-input");
+
+        nutritionInputs.forEach(function(input) {
+
+            // Remove zero when the user clicks the field
+            input.addEventListener("focus", function() {
+                if (this.value === "0") {
+                    this.value = "";
+                }
+            });
+
+            // Restore zero if the field is left empty
+            input.addEventListener("blur", function() {
+                if (this.value.trim() === "") {
+                    this.value = "0";
+                }
+            });
+
+        });
+    </script>
 
 </body>
 </html>

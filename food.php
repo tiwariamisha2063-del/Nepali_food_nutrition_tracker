@@ -1,24 +1,26 @@
 
+
+
 <?php
 session_start();
+
+require_once "includes/db.php";
+require_once "includes/notification.php";
 
 if (!isset($_SESSION["user_id"])) {
     header("Location: login.php");
     exit;
 }
 
-require_once "includes/db.php";
+// Initialize message
 $message = "";
-
-if (isset($_GET["message"]) && $_GET["message"] === "deleted") {
-    $message = "Food deleted successfully!";
-}
 
 // Get the search word entered by the user
 $search = trim($_GET["search"] ?? "");
 
 // Search for foods if a search word is entered
 if ($search !== "") {
+
     $sql = "SELECT * FROM foods
             WHERE food_name LIKE :search
             ORDER BY food_name ASC";
@@ -28,14 +30,18 @@ if ($search !== "") {
     $stmt->execute([
         "search" => "%" . $search . "%"
     ]);
+
 } else {
+
     // Display all foods if the search box is empty
     $sql = "SELECT * FROM foods ORDER BY food_name ASC";
+
     $stmt = $pdo->query($sql);
 }
 
-// Store the retrieved records in an array
+// Store retrieved food records
 $foods = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 ?>
 
 
@@ -45,9 +51,10 @@ $foods = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nepalese Food Nutrition Tracker</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-
+<?php display_notification(); ?>
     <h1>Nepalese Food Nutrition Tracker</h1>
     <?php if ($message !== ""): ?>
     <p style="color: green;">

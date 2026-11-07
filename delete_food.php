@@ -2,14 +2,13 @@
 <?php
 session_start();
 
+require_once "includes/db.php";
+require_once "includes/notification.php";
+
 if (!isset($_SESSION["user_id"])) {
     header("Location: login.php");
     exit;
 }
-
-require_once "includes/db.php";
-
-$message = "";
 
 // Get the food ID from the URL
 $id = filter_input(INPUT_GET, "id", FILTER_VALIDATE_INT);
@@ -28,15 +27,20 @@ if (!$food) {
     die("Food not found.");
 }
 
-// Delete the food only after confirmation
+// Delete the food after confirmation
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
+
     $stmt = $pdo->prepare(
         "DELETE FROM foods WHERE id = :id"
     );
 
     $stmt->execute(["id" => $id]);
 
-    header("Location: food.php?message=deleted");
+    // Show success notification
+    set_notification("Food deleted successfully!", "success");
+
+    // Redirect to food list
+    header("Location: food.php");
     exit;
 }
 ?>
@@ -47,6 +51,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Delete Food - Nepalese Food Nutrition Tracker</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
